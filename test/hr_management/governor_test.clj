@@ -52,6 +52,20 @@
     (is (= :human-approval (:decision result)))
     (is (= :personnel-action (:reason result)))))
 
+(deftest holds-on-unrecognized-safety-class-instead-of-silently-proceeding
+  ;; safety-rank used .indexOf, which returns -1 (not an exception) for a
+  ;; value outside safety-classes, silently ranked as 0 == :none -- an
+  ;; unrecognized safety-class (typo, wrong type, or unexpected Advisor
+  ;; output) used to bypass the mandatory human-approval gate for
+  ;; :high/:safety-critical proposals instead of failing closed.
+  (let [st (fresh-store)
+        env (governor/env-for-store st)
+        proposal {:action :hr-record :employee-id "emp-1" :safety-class :extreme
+                   :effect :propose :confidence 1.0}
+        result (governor/assess env proposal)]
+    (is (= :hold (:decision result)))
+    (is (some #(= :invalid-safety-class (:rule %)) (:violations result)))))
+
 (deftest human-approval-on-high-safety-class-even-when-clean
   (let [st (fresh-store)
         env (governor/env-for-store st)
