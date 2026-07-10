@@ -25,6 +25,23 @@
     (is (= :hold (:decision result)))
     (is (some #(= :no-role-mandate (:rule %)) (:violations result)))))
 
+(deftest holds-on-orphaned-role-mandate-with-no-employee-record
+  ;; register-employee!/register-role-mandate! are two independent Store
+  ;; writes with no atomic combined operation -- a role-mandate can exist
+  ;; for an employee-id that was never registered (or whose employee
+  ;; record was independently removed/never landed). hard-violations used
+  ;; to check ONLY role-mandate-fn, so this orphaned state slipped through
+  ;; as a clean pass. Same gap already found and fixed in the platform
+  ;; edge copy (cloud-itonami.edge.hr-governor).
+  (let [st (store/mem-store)
+        _ (store/register-role-mandate! st {:employee-id "orphan-emp" :position "engineer"})
+        env (governor/env-for-store st)
+        proposal {:action :hr-record :employee-id "orphan-emp" :safety-class :low
+                   :effect :propose :confidence 0.9}
+        result (governor/assess env proposal)]
+    (is (= :hold (:decision result)))
+    (is (some #(= :no-employee-record (:rule %)) (:violations result)))))
+
 (deftest holds-on-no-actuation-violation
   (let [st (fresh-store)
         env (governor/env-for-store st)

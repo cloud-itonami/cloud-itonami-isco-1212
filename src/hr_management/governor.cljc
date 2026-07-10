@@ -17,7 +17,15 @@
   HARD invariants for :hr/propose:
     1. Role-mandate provenance — an hr-record or personnel-action event
        must reference a registered employee with a registered role
-       mandate.
+       mandate. Checks BOTH halves independently (:no-employee-record /
+       :no-role-mandate) — register-employee!/register-role-mandate! are
+       two independent Store writes with no atomic combined operation, so
+       a role-mandate can be registered for an employee-id that was never
+       (or no longer) registered; checking only role-mandate-fn would let
+       that orphaned state slip through as a clean pass even though this
+       docstring already claimed the employee half was enforced too. Same
+       gap already found and fixed in the platform edge copy
+       (cloud-itonami.edge.hr-governor, gftdcojp/cloud-itonami).
     2. No-actuation         — the proposal must not directly mutate an
        hr-record or personnel-action outside the
        record-hr-record!/record-personnel-action! path (effect must be
@@ -50,10 +58,14 @@
   (let [idx (.indexOf safety-classes safety-class)]
     (if (neg? idx) 0 idx)))
 
-(defn- hard-violations [{:keys [role-mandate-fn]} proposal]
+(defn- hard-violations [{:keys [employee-fn role-mandate-fn]} proposal]
   (let [{:keys [employee-id effect safety-class]} proposal
+        employee (employee-fn employee-id)
         role-mandate (role-mandate-fn employee-id)]
     (cond-> []
+      (nil? employee)
+      (conj {:rule :no-employee-record :detail (str "未登録従業員 " employee-id)})
+
       (nil? role-mandate)
       (conj {:rule :no-role-mandate :detail (str "未登録 role-mandate " employee-id)})
 
@@ -65,8 +77,9 @@
              :detail (str "未知の safety-class " safety-class)}))))
 
 (defn assess
-  "Assess a proposal against `env` (a map with `:role-mandate-fn` lookup,
-  decoupled from any concrete Store so this stays pure). Returns
+  "Assess a proposal against `env` (a map with `:employee-fn`/
+  `:role-mandate-fn` lookups, decoupled from any concrete Store so this
+  stays pure). Returns
   `{:decision :proceed|:hold|:human-approval :violations [...] :confidence n}`."
   [env proposal]
   (let [violations (hard-violations env proposal)
@@ -100,4 +113,5 @@
   "Build the decoupled env map `assess` needs from a concrete
   `hr-management.store/Store` implementation."
   [store]
-  {:role-mandate-fn #(store/role-mandate-of store %)})
+  {:employee-fn #(store/employee store %)
+   :role-mandate-fn #(store/role-mandate-of store %)})
