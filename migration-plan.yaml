@@ -1,0 +1,21 @@
+schema: kotoba.source-migration.v1
+repository: cloud-itonami/cloud-itonami-isco-1212
+adr: ADR-2607171700
+baseline:
+  - src/hr_management/governor.cljc
+  - src/hr_management/store.cljc
+dispositions:
+  - path: src/hr_management/governor.cljc
+    kind: retained-common
+    reason: Pure governor shared with the host Store boundary.
+  - path: src/hr_management/store.cljc
+    kind: retained-common
+    reason: Defines defprotocol and defrecord host storage implementations outside the current Kotoba guest Wasm subset.
+verification:
+  - clojure -M:test
+verification_result:
+  status: passed
+  tests: 10 tests, 19 assertions, 0 failures, 0 errors
+retained_cljc:
+  - src/hr_management/governor.cljc
+  - src/hr_management/store.cljc
