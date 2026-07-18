@@ -1,0 +1,12 @@
+(ns kotoba.cloud-itonami.hr-management.governor-decision
+  (:export [decision]))
+
+;; 0 = hold, 1 = human approval, 2 = proceed.
+;; Host adapters must resolve identities and bounded confidence/safety inputs
+;; before calling this capability-free decision kernel.
+(defn decision [hard-violation urgent personnel-action high-safety low-confidence]
+  (if hard-violation
+    0
+    (if (or urgent personnel-action high-safety low-confidence)
+      1
+      2)))
