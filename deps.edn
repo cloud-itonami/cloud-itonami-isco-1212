@@ -1,5 +1,11 @@
 {:paths ["src"]
- :deps {}
+ ;; kotoba-lang/langgraph is hr-management.actor's StateGraph runtime
+ ;; (zero-/single-dep, all .cljc -> portable to JVM / SCI /
+ ;; ClojureScript / GraalVM, same layering as the other cloud-itonami
+ ;; actors, e.g. cloud-itonami-isco-1213 / cloud-itonami-isco-4311 /
+ ;; cloud-itonami-isco-2411 / cloud-itonami-isco-1211).
+ :deps {io.github.kotoba-lang/langgraph
+        {:git/sha "5b4e5e70837b849b14b6a5800894e3be202ad5fa"}}
  :aliases
  {:test {:extra-paths ["test"]
          :extra-deps {io.github.cognitect-labs/test-runner

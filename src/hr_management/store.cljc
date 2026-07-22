@@ -20,7 +20,16 @@
   The append-only records are the operating ledger: an hr-record or
   personnel-action event must reference a registered employee with a
   registered role mandate, and records are never mutated in place, only
-  appended.")
+  appended.
+
+  `ledger`/`append-ledger!` (added for the hr-management.actor
+  StateGraph, modeled on cloud-itonami-isco-1213's policyplan.store /
+  cloud-itonami-isco-4311's bookkeeping.store): a SEPARATE append-only
+  audit trail of every :commit/:hold disposition the actor reaches,
+  regardless of outcome — distinct from hr-records-of/
+  personnel-actions-of, which hold only the committed domain records
+  themselves. Additive only; does not change any existing Store method
+  or MemStore field above.")
 
 (defprotocol Store
   (employee [st employee-id])
@@ -30,7 +39,9 @@
   (register-employee! [st employee])
   (register-role-mandate! [st role-mandate])
   (record-hr-record! [st hr-record])
-  (record-personnel-action! [st personnel-action]))
+  (record-personnel-action! [st personnel-action])
+  (ledger [st])
+  (append-ledger! [st fact]))
 
 (defrecord MemStore [state]
   Store
@@ -49,9 +60,15 @@
   (record-hr-record! [_ hr-record]
     (swap! state update :hr-records (fnil conj []) hr-record))
   (record-personnel-action! [_ personnel-action]
-    (swap! state update :personnel-actions (fnil conj []) personnel-action)))
+    (swap! state update :personnel-actions (fnil conj []) personnel-action))
+  (ledger [_]
+    (:ledger @state))
+  (append-ledger! [_ fact]
+    (swap! state update :ledger (fnil conj []) fact)))
 
 (defn mem-store
   ([] (mem-store {}))
   ([seed]
-   (->MemStore (atom (merge {:employees {} :role-mandates {} :hr-records [] :personnel-actions []} seed)))))
+   (->MemStore (atom (merge {:employees {} :role-mandates {} :hr-records []
+                              :personnel-actions [] :ledger []}
+                            seed)))))
