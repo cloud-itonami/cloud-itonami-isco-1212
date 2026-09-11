@@ -12,7 +12,7 @@ dispositions:
     kind: retained-common
     reason: Defines defprotocol and defrecord host storage implementations outside the current Kotoba guest Wasm subset.
 verification:
-  - clojure -M:test
+  - kbb -M:test
 verification_result:
   status: passed
   tests: 10 tests, 19 assertions, 0 failures, 0 errors
