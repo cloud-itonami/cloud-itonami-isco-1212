@@ -82,7 +82,7 @@ implementation of the Core Contract above (pure cljc, no external deps):
   `:safety-critical` and low-confidence proposals also escalate.
 
 ```bash
-clojure -M:test   # 8 tests, 15 assertions, green
+kbb -M:test   # 8 tests, 15 assertions, green
 ```
 
 ## License
