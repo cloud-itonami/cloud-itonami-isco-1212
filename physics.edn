@@ -1,0 +1,33 @@
+;; What this vertical's robot physically does, declared for
+;; kotoba.robotics.process (kotoba-lang/robotics). `kbb -M:physics` runs it.
+;;
+;; README "Robotics premise": HR management (ISCO 1212) is primarily a desk
+;; occupation, so the physical component is intentionally minimal: an
+;; onboarding/check-in kiosk robot issues badges, hands over welcome kits and
+;; guides new hires between orientation stops. Its physical work is handing a
+;; kit across the counter and stopping short when a person steps in front of
+;; it while guiding.
+;;
+;; Every number without a cited source is marked `estimate` in its :basis.
+;; Replacing an estimate with a sourced value is this bot's growth work.
+{:physics/schema "itonami.physical-ai.spec.v1"
+ :repo "cloud-itonami/cloud-itonami-isco-1212"
+ :cases
+ [{:id :welcome-kit-handover
+   :kind :manipulator
+   :procedure "kiosk arm lifts a welcome kit (laptop, badge, documents) from the under-counter bin and holds it out at the new hire's hand height"
+   :params {:l1-m 0.45 :l2-m 0.40 :m1-kg 3.5 :m2-kg 2.5
+            :from [0.30 -0.35] :to [0.70 0.20] :duration-s 2.0 :steps 400}
+   :sweep {:param :payload-kg :values [0.5 1.0 2.0 3.0 4.5]}
+   :quantity :peak-tau1-nm
+   :limit {:max 40.0 :basis "estimate: rated shoulder torque of a ~5 kg-class collaborative arm on a reception kiosk"}
+   :boundary {:lo 0.1 :hi 15.0}}
+  {:id :guide-stop-short
+   :kind :transport
+   :procedure "guide robot (1.5 m kiosk body) leads a new hire 60 m to the next orientation stop and must stop short when someone steps into its path"
+   :params {:mass-kg 55.0 :payload-kg 3.0 :distance-m 60.0 :v-max-mps 0.9 :a-max-mps2 0.4
+            :drive-force-n 90.0 :crr 0.015 :cog-height-m 0.75 :support-half-length-m 0.22}
+   :sweep {:param :brake-decel-mps2 :values [0.5 0.8 1.1 1.4 1.8]}
+   :quantity :min-tipover-margin
+   :limit {:min 0.4 :basis "estimate: a tall, top-heavy kiosk body among people keeps 40 % of its static tip-over moment in reserve"}
+   :boundary {:lo 0.3 :hi 3.0}}]}
